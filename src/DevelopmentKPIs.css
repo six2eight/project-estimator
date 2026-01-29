@@ -1,0 +1,333 @@
+/* Development KPIs Specific Styles */
+.dev-kpis {
+    min-height: 100vh;
+    padding: var(--spacing-xl) 0;
+}
+
+/* Week Selector */
+.week-selector {
+    margin-top: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    flex-wrap: wrap;
+}
+
+.week-display {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    flex: 1;
+    min-width: 280px;
+}
+
+.week-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.week-dates {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-400);
+}
+
+.btn-sm {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.875rem;
+}
+
+/* Week Calendar Picker */
+.week-calendar-picker {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.calendar-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.calendar-label:hover {
+    background: var(--surface-elevated);
+    border-color: var(--primary-700);
+    color: var(--text-primary);
+}
+
+.calendar-label svg {
+    color: var(--primary-400);
+    flex-shrink: 0;
+}
+
+.calendar-input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    cursor: pointer;
+}
+
+.calendar-input:focus+.calendar-label {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+/* KPI Cards Section */
+.kpi-cards-section {
+    margin-bottom: var(--spacing-xl);
+    animation: fadeIn var(--transition-slow) ease-out;
+}
+
+.kpi-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--transition-slow);
+}
+
+.kpi-card:hover::before {
+    transform: scaleX(1);
+}
+
+.kpi-card:hover {
+    border-color: var(--gray-600);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.kpi-card-hours::before {
+    background: linear-gradient(90deg, hsl(260, 80%, 55%), hsl(260, 90%, 65%));
+}
+
+.kpi-card-completion::before {
+    background: linear-gradient(90deg, hsl(160, 80%, 45%), hsl(160, 90%, 55%));
+}
+
+.kpi-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-lg);
+    background: var(--surface-elevated);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all var(--transition-base);
+}
+
+.kpi-card-hours .kpi-icon {
+    color: hsl(260, 80%, 55%);
+}
+
+.kpi-card-completion .kpi-icon {
+    color: hsl(160, 80%, 45%);
+}
+
+.kpi-card:hover .kpi-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.kpi-card-hours:hover .kpi-icon {
+    background: linear-gradient(135deg, hsl(260, 80%, 55%), hsl(260, 90%, 65%));
+    color: white;
+}
+
+.kpi-card-completion:hover .kpi-icon {
+    background: linear-gradient(135deg, hsl(160, 80%, 45%), hsl(160, 90%, 55%));
+    color: white;
+}
+
+.kpi-content {
+    flex: 1;
+}
+
+.kpi-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: var(--spacing-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.kpi-value {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: var(--spacing-xs);
+}
+
+.kpi-card-hours .kpi-value {
+    background: linear-gradient(135deg, hsl(260, 80%, 55%), hsl(260, 90%, 65%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.kpi-card-completion .kpi-value {
+    background: linear-gradient(135deg, hsl(160, 80%, 45%), hsl(160, 90%, 55%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.kpi-subtitle {
+    font-size: 0.813rem;
+    color: var(--text-tertiary);
+    font-weight: 400;
+}
+
+/* Checkbox Styling */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+}
+
+.checkbox-input {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary-500);
+}
+
+.checkbox-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-full);
+    font-size: 0.813rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-success {
+    background: linear-gradient(135deg, hsl(160, 70%, 25%), hsl(160, 80%, 20%));
+    color: hsl(160, 90%, 60%);
+    border: 1px solid hsl(160, 70%, 30%);
+}
+
+.status-late {
+    background: linear-gradient(135deg, hsl(0, 70%, 25%), hsl(0, 80%, 20%));
+    color: hsl(0, 90%, 60%);
+    border: 1px solid hsl(0, 70%, 30%);
+}
+
+.status-pending {
+    background: linear-gradient(135deg, hsl(45, 70%, 25%), hsl(45, 80%, 20%));
+    color: hsl(45, 90%, 60%);
+    border: 1px solid hsl(45, 70%, 30%);
+}
+
+/* Input disabled state */
+input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--surface-elevated);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .kpi-cards-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .kpi-value {
+        font-size: 2.5rem;
+    }
+
+    .week-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .week-display {
+        flex-direction: column;
+        align-items: flex-start;
+        min-width: auto;
+    }
+
+    .btn-sm {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .week-calendar-picker {
+        width: 100%;
+    }
+
+    .calendar-label {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-3xl) var(--spacing-xl);
+    color: var(--text-tertiary);
+    font-size: 1rem;
+}
