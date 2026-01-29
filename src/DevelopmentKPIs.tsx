@@ -12,12 +12,6 @@ interface DevelopmentTask {
     isOnTime: boolean;
 }
 
-interface WeeklyReport {
-    weekStartDate: string;
-    weekEndDate: string;
-    tasks: DevelopmentTask[];
-}
-
 function DevelopmentKPIs() {
     const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
         const saved = localStorage.getItem('devKPI_weekStart');
