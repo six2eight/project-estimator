@@ -1,16 +1,30 @@
 import { useState, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx-js-style';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import './DevelopmentKPIs.css';
 
 interface DevelopmentTask {
     id: string;
     taskName: string;
+    assignee: string;
     hoursLogged: number;
     dueDate: string;
     completedDate: string;
     isCompleted: boolean;
     isOnTime: boolean;
 }
+
+// Predefined list of developers
+const DEVELOPERS = [
+    'Abdullah Al Mukit',
+    'Kamal Hosen',
+    'Md. Mostafizur Rahman',
+    'Robiul Shagor',
+    'Monsur Ahmed',
+    'Muhibul Haque',
+    'Rezwan Al Kaoser',
+];
 
 function DevelopmentKPIs() {
     const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
@@ -58,11 +72,23 @@ function DevelopmentKPIs() {
             ? (onTimeTasks.length / completedTasks.length) * 100
             : 0;
 
+        // Calculate hours by assignee
+        const hoursByAssignee = tasks.reduce((acc, task) => {
+            if (task.assignee && task.hoursLogged > 0) {
+                if (!acc[task.assignee]) {
+                    acc[task.assignee] = 0;
+                }
+                acc[task.assignee] += task.hoursLogged;
+            }
+            return acc;
+        }, {} as Record<string, number>);
+
         return {
             totalHours: totalHours.toFixed(1),
             completedTasksCount: completedTasks.length,
             totalTasksCount: tasks.length,
-            onTimePercentage: onTimePercentage.toFixed(1)
+            onTimePercentage: onTimePercentage.toFixed(1),
+            hoursByAssignee
         };
     }, [tasks]);
 
@@ -83,6 +109,7 @@ function DevelopmentKPIs() {
         const newTask: DevelopmentTask = {
             id: Date.now().toString(),
             taskName: '',
+            assignee: '',
             hoursLogged: 0,
             dueDate: currentWeekEnd,
             completedDate: '',
@@ -119,59 +146,107 @@ function DevelopmentKPIs() {
     };
 
     const exportToExcel = () => {
-        // Prepare data for export
-        const exportData = tasks.map(task => ({
-            'Task Name': task.taskName,
-            'Hours Logged': task.hoursLogged,
-            'Due Date': task.dueDate,
-            'Completed Date': task.completedDate || 'N/A',
-            'Status': task.isCompleted ? 'Completed' : 'In Progress',
-            'On Time': task.isCompleted ? (task.isOnTime ? 'Yes' : 'No') : 'N/A'
-        }));
+        const exportData: any[] = [];
 
-        // Add blank row
+        // KPI 1: Development Hours Logged by Team Member
         exportData.push({
-            'Task Name': '',
-            'Hours Logged': '',
-            'Due Date': '',
-            'Completed Date': '',
-            'Status': '',
-            'On Time': ''
-        } as any);
-
-        // Add KPI summary
-        exportData.push({
-            'Task Name': 'TOTAL HOURS LOGGED',
-            'Hours Logged': kpis.totalHours,
-            'Due Date': '',
-            'Completed Date': '',
-            'Status': '',
-            'On Time': ''
-        } as any);
+            'Name': '✓ KPI 1: Development Hours Logged',
+            'Hours': ''
+        });
 
         exportData.push({
-            'Task Name': 'ON-TIME COMPLETION RATE',
-            'Hours Logged': `${kpis.onTimePercentage}%`,
-            'Due Date': '',
-            'Completed Date': '',
-            'Status': `${kpis.completedTasksCount}/${kpis.totalTasksCount} tasks`,
-            'On Time': ''
-        } as any);
+            'Name': '',
+            'Hours': ''
+        });
+
+        const assigneeEntries = Object.entries(kpis.hoursByAssignee);
+        if (assigneeEntries.length > 0) {
+            assigneeEntries
+                .sort(([, a], [, b]) => b - a)
+                .forEach(([assignee, hours]) => {
+                    const hoursNum = Number(hours);
+                    const hoursInt = Math.floor(hoursNum);
+                    const minutesInt = Math.round((hoursNum - hoursInt) * 60);
+                    const displayHours = minutesInt > 0
+                        ? `${hoursInt}hrs ${minutesInt}min`
+                        : `${hoursInt}hrs`;
+
+                    exportData.push({
+                        'Name': assignee,
+                        'Hours': displayHours
+                    });
+                });
+        }
+
+        // Total hours
+        const totalHoursNum = Number(kpis.totalHours);
+        const totalHoursInt = Math.floor(totalHoursNum);
+        const totalMinutesInt = Math.round((totalHoursNum - totalHoursInt) * 60);
+        const totalDisplayHours = totalMinutesInt > 0
+            ? `${totalHoursInt}hrs ${totalMinutesInt}min`
+            : `${totalHoursInt}hrs`;
+
+        exportData.push({
+            'Name': '',
+            'Hours': ''
+        });
+
+        exportData.push({
+            'Name': 'Total Development Hours Logged',
+            'Hours': totalDisplayHours
+        });
+
+        // Add blank rows
+        exportData.push({
+            'Name': '',
+            'Hours': ''
+        });
+        exportData.push({
+            'Name': '',
+            'Hours': ''
+        });
+
+        // KPI 2: On-Time Task Completion
+        exportData.push({
+            'Name': 'KPI 2: On-Time Task Completion (%)',
+            'Hours': ''
+        });
+
+        exportData.push({
+            'Name': '',
+            'Hours': ''
+        });
+
+        const totalTasksDue = tasks.filter(task => task.dueDate <= currentWeekEnd).length;
+        const completedOnTime = tasks.filter(task =>
+            task.isCompleted && task.isOnTime && task.dueDate <= currentWeekEnd
+        ).length;
+
+        exportData.push({
+            'Name': `Total Development Tasks Due Last Week: ${totalTasksDue}`,
+            'Hours': ''
+        });
+
+        exportData.push({
+            'Name': `Completed On Time (By Any Developer): ${completedOnTime}`,
+            'Hours': ''
+        });
+
+        exportData.push({
+            'Name': `On-Time Completion = ${kpis.onTimePercentage}%`,
+            'Hours': ''
+        });
 
         // Create worksheet
         const ws = XLSX.utils.json_to_sheet(exportData);
 
         // Set column widths
         ws['!cols'] = [
-            { wch: 35 }, // Task Name
-            { wch: 15 }, // Hours Logged
-            { wch: 15 }, // Due Date
-            { wch: 18 }, // Completed Date
-            { wch: 15 }, // Status
-            { wch: 12 }  // On Time
+            { wch: 50 }, // Name
+            { wch: 20 }  // Hours
         ];
 
-        // Apply Arial font to all cells
+        // Apply Arial font to all cells and set cell type
         const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
         for (let R = range.s.r; R <= range.e.r; ++R) {
             for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -182,12 +257,16 @@ function DevelopmentKPIs() {
                         name: 'Arial',
                         sz: 11
                     };
+                    // Explicitly set cell type to prevent apostrophe
+                    if (ws[cellAddress].t === 's') {
+                        ws[cellAddress].t = 's';
+                    }
                 }
             }
         }
 
         // Apply bold formatting to header row
-        const headerCells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1'];
+        const headerCells = ['A1', 'B1'];
         headerCells.forEach(cell => {
             if (ws[cell]) {
                 ws[cell].s = {
@@ -204,26 +283,34 @@ function DevelopmentKPIs() {
             }
         });
 
-        // Apply bold formatting to summary rows
-        const summaryStartRow = exportData.length - 1; // TOTAL HOURS LOGGED row
-        for (let i = 0; i < 2; i++) {
-            const rowNum = summaryStartRow + i;
-            const summaryCells = [`A${rowNum}`, `B${rowNum}`, `C${rowNum}`, `D${rowNum}`, `E${rowNum}`, `F${rowNum}`];
-            summaryCells.forEach(cell => {
-                if (ws[cell]) {
-                    ws[cell].s = {
-                        font: {
-                            bold: true,
-                            sz: 11,
-                            name: 'Arial'
-                        },
-                        alignment: {
-                            vertical: 'center',
-                            horizontal: 'left'
+        // Apply bold formatting to KPI headers and summary rows
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            const cellA = ws[`A${R + 1}`];
+            if (cellA && cellA.v) {
+                const cellValue = cellA.v.toString();
+                // Bold rows that are KPI headers or summary rows
+                if (cellValue.includes('KPI 1:') ||
+                    cellValue.includes('KPI 2:') ||
+                    cellValue.startsWith('Total Development Hours Logged') ||
+                    cellValue.startsWith('On-Time Completion =')) {
+                    const summaryCells = [`A${R + 1}`, `B${R + 1}`];
+                    summaryCells.forEach(cell => {
+                        if (ws[cell]) {
+                            ws[cell].s = {
+                                font: {
+                                    bold: true,
+                                    sz: 11,
+                                    name: 'Arial'
+                                },
+                                alignment: {
+                                    vertical: 'center',
+                                    horizontal: 'left'
+                                }
+                            };
                         }
-                    };
+                    });
                 }
-            });
+            }
         }
 
         // Create workbook
@@ -240,6 +327,160 @@ function DevelopmentKPIs() {
         const filename = `${reportTitle.toLowerCase().replace(/\s+/g, '-')}-${currentWeekStart}.xlsx`;
         XLSX.writeFile(wb, filename);
     };
+
+    const exportToPDF = () => {
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        // Header background
+        doc.setFillColor(99, 102, 241); // Purple
+        doc.rect(0, 0, pageWidth, 45, 'F');
+
+        // Title
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text(reportTitle || 'Team Delta KPI Report', pageWidth / 2, 20, { align: 'center' });
+
+        // Week range
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(240, 240, 255);
+        doc.text(`Week: ${currentWeekStart} to ${currentWeekEnd}`, pageWidth / 2, 32, { align: 'center' });
+
+        let yPosition = 60;
+
+        // KPI 1: Development Hours Logged
+        doc.setFillColor(240, 253, 244); // Light green background
+        doc.rect(14, yPosition - 8, pageWidth - 28, 12, 'F');
+
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(22, 163, 74); // Dark green
+        doc.text('KPI 1: Development Hours Logged', 18, yPosition);
+        yPosition += 8;
+
+        // Hours by Team Member Table
+        const assigneeEntries = Object.entries(kpis.hoursByAssignee);
+        if (assigneeEntries.length > 0) {
+            const assigneeData = assigneeEntries
+                .sort(([, a], [, b]) => b - a)
+                .map(([assignee, hours]) => {
+                    const hoursNum = Number(hours);
+                    const hoursInt = Math.floor(hoursNum);
+                    const minutesInt = Math.round((hoursNum - hoursInt) * 60);
+                    const displayHours = minutesInt > 0
+                        ? `${hoursInt}hrs ${minutesInt}min`
+                        : `${hoursInt}hrs`;
+                    return [assignee, displayHours];
+                });
+
+            autoTable(doc, {
+                startY: yPosition,
+                head: [['Name', 'Hours']],
+                body: assigneeData,
+                theme: 'striped',
+                headStyles: {
+                    fillColor: [99, 102, 241],
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    fontSize: 9,
+                    cellPadding: 4
+                },
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 4,
+                    lineColor: [220, 220, 220],
+                    lineWidth: 0.1
+                },
+                alternateRowStyles: {
+                    fillColor: [248, 250, 252]
+                },
+                columnStyles: {
+                    0: { cellWidth: 120, fontStyle: 'bold' },
+                    1: { cellWidth: 'auto', halign: 'right', textColor: [99, 102, 241], fontStyle: 'bold' }
+                },
+                margin: { left: 14, right: 14 }
+            });
+
+            yPosition = (doc as any).lastAutoTable.finalY + 8;
+        }
+
+        // Total Development Hours - Highlighted box
+        const totalHoursNum = Number(kpis.totalHours);
+        const totalHoursInt = Math.floor(totalHoursNum);
+        const totalMinutesInt = Math.round((totalHoursNum - totalHoursInt) * 60);
+        const totalDisplayHours = totalMinutesInt > 0
+            ? `${totalHoursInt}hrs ${totalMinutesInt}min`
+            : `${totalHoursInt}hrs`;
+
+        doc.setFillColor(99, 102, 241);
+        doc.rect(14, yPosition - 2, pageWidth - 28, 14, 'F');
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text('Total Design Hours Logged', 18, yPosition + 6);
+        doc.text(totalDisplayHours, pageWidth - 18, yPosition + 6, { align: 'right' });
+        yPosition += 30;
+
+        // KPI 2: On-Time Task Completion
+        doc.setFillColor(240, 253, 244); // Light green background
+        doc.rect(14, yPosition - 8, pageWidth - 28, 12, 'F');
+
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(22, 163, 74); // Dark green
+        doc.text('KPI 2: On-Time Task Completion (%)', 18, yPosition);
+        yPosition += 12;
+
+        // Calculate tasks for the week
+        const totalTasksDue = tasks.filter(task => task.dueDate <= currentWeekEnd).length;
+        const completedOnTime = tasks.filter(task =>
+            task.isCompleted && task.isOnTime && task.dueDate <= currentWeekEnd
+        ).length;
+
+        // Create a nice box for the metrics
+        doc.setDrawColor(99, 102, 241);
+        doc.setLineWidth(0.5);
+        doc.rect(14, yPosition - 2, pageWidth - 28, 32, 'S');
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        doc.text(`•  Total Design Tasks Due Last Week: `, 20, yPosition + 6);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(99, 102, 241);
+        doc.text(`${totalTasksDue}`, 110, yPosition + 6);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        doc.text(`•  Completed On Time (By Any Developer): `, 20, yPosition + 14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(99, 102, 241);
+        doc.text(`${completedOnTime}`, 110, yPosition + 14);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(60, 60, 60);
+        doc.text(`•  On-Time Completion = `, 20, yPosition + 24);
+        doc.setFontSize(12);
+        doc.setTextColor(34, 197, 94);
+        doc.text(`${kpis.onTimePercentage}%`, 75, yPosition + 24);
+
+        // Footer
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+
+        // Save PDF
+        const pdfFilename = `${reportTitle.toLowerCase().replace(/\s+/g, '-')}-${currentWeekStart}.pdf`;
+        doc.save(pdfFilename);
+    };
+
 
     const clearAll = () => {
         if (window.confirm('Are you sure you want to clear all tasks?')) {
@@ -289,6 +530,16 @@ function DevelopmentKPIs() {
                             </svg>
                             Export to Excel
                         </button>
+                        <button className="btn btn-primary" onClick={exportToPDF}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                            Export to PDF
+                        </button>
                     </div>
                 </div>
 
@@ -298,7 +549,7 @@ function DevelopmentKPIs() {
                             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                             <polyline points="14 2 14 8 20 8" />
                         </svg>
-                        Report Title (for Excel export)
+                        Report Title (for exports)
                     </label>
                     <input
                         id="report-title"
@@ -391,25 +642,95 @@ function DevelopmentKPIs() {
                     </div>
                 </div>
 
+                {/* Hours Breakdown by Team Member */}
+                {Object.keys(kpis.hoursByAssignee).length > 0 && (
+                    <div className="card glass animate-slide-in" style={{ marginBottom: '2rem' }}>
+                        <div style={{ padding: '1.5rem' }}>
+                            <h3 style={{
+                                fontSize: '1.25rem',
+                                fontWeight: '600',
+                                marginBottom: '1.5rem',
+                                color: 'var(--text-primary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Development Hours Logged by Team Member
+                            </h3>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                                gap: '1rem'
+                            }}>
+                                {Object.entries(kpis.hoursByAssignee)
+                                    .sort(([, a], [, b]) => b - a)
+                                    .map(([assignee, hours]) => {
+                                        const hoursNum = Number(hours);
+                                        const hoursInt = Math.floor(hoursNum);
+                                        const minutesInt = Math.round((hoursNum - hoursInt) * 60);
+                                        const displayHours = minutesInt > 0
+                                            ? `${hoursInt}hrs ${minutesInt}min`
+                                            : `${hoursInt}hrs`;
+
+                                        return (
+                                            <div key={assignee} style={{
+                                                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%)',
+                                                border: '1px solid rgba(99, 102, 241, 0.2)',
+                                                borderRadius: '12px',
+                                                padding: '1rem',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                transition: 'all 0.3s ease'
+                                            }}>
+                                                <div style={{
+                                                    fontWeight: '500',
+                                                    color: 'var(--text-primary)',
+                                                    fontSize: '0.95rem'
+                                                }}>
+                                                    {assignee}
+                                                </div>
+                                                <div style={{
+                                                    fontWeight: '700',
+                                                    fontSize: '1.1rem',
+                                                    color: '#6366f1'
+                                                }}>
+                                                    {displayHours}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Tasks Table */}
                 <div className="card glass animate-slide-in">
                     <div className="table-container">
                         <table>
                             <thead>
                                 <tr>
-                                    <th style={{ width: '25%' }}>Task Name</th>
-                                    <th style={{ width: '12%' }}>Hours Logged</th>
-                                    <th style={{ width: '13%' }}>Due Date</th>
-                                    <th style={{ width: '13%' }}>Completed Date</th>
-                                    <th style={{ width: '12%' }}>Completed</th>
-                                    <th style={{ width: '12%' }}>On Time</th>
+                                    <th style={{ width: '20%' }}>Task Name</th>
+                                    <th style={{ width: '15%' }}>Assignee</th>
+                                    <th style={{ width: '10%' }}>Hours Logged</th>
+                                    <th style={{ width: '12%' }}>Due Date</th>
+                                    <th style={{ width: '12%' }}>Completed Date</th>
+                                    <th style={{ width: '10%' }}>Completed</th>
+                                    <th style={{ width: '10%' }}>On Time</th>
                                     <th style={{ width: '8%' }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {tasks.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="empty-state">
+                                        <td colSpan={8} className="empty-state">
                                             No tasks added yet. Click "Add Task" to get started.
                                         </td>
                                     </tr>
@@ -424,6 +745,18 @@ function DevelopmentKPIs() {
                                                     onChange={(e) => updateTask(task.id, 'taskName', e.target.value)}
                                                     className="input-full"
                                                 />
+                                            </td>
+                                            <td>
+                                                <select
+                                                    value={task.assignee}
+                                                    onChange={(e) => updateTask(task.id, 'assignee', e.target.value)}
+                                                    className="input-full"
+                                                >
+                                                    <option value="">Select assignee...</option>
+                                                    {DEVELOPERS.map(dev => (
+                                                        <option key={dev} value={dev}>{dev}</option>
+                                                    ))}
+                                                </select>
                                             </td>
                                             <td>
                                                 <input
