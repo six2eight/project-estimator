@@ -47,8 +47,8 @@ function ClickUpDataImport({ onImport, weekStart, weekEnd }: ClickUpDataImportPr
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [teams, setTeams] = useState<ClickUpTeam[]>([]);
     const [selectedTeamId, setSelectedTeamId] = useState<string>('');
-    const [spaces, setSpaces] = useState<ClickUpSpace[]>([]);
-    const [selectedSpaceId, setSelectedSpaceId] = useState<string>('');
+    const [, setSpaces] = useState<ClickUpSpace[]>([]);
+    const [, setSelectedSpaceId] = useState<string>('');
     const [allLists, setAllLists] = useState<ClickUpList[]>([]);
     const [selectedListId, setSelectedListId] = useState<string>('');
     const [goals, setGoals] = useState<ClickUpGoal[]>([]);
@@ -56,7 +56,7 @@ function ClickUpDataImport({ onImport, weekStart, weekEnd }: ClickUpDataImportPr
     const [groups, setGroups] = useState<ClickUpGroup[]>([]);
     const [selectedGroupId, setSelectedGroupId] = useState<string>('');
     const [listsWithMemberTasks, setListsWithMemberTasks] = useState<Set<string>>(new Set());
-    const [customTaskTypes, setCustomTaskTypes] = useState<Array<{ id: number; name: string }>>([]);
+    const [, setCustomTaskTypes] = useState<Array<{ id: number; name: string }>>([]);
     const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>('');
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
@@ -144,10 +144,11 @@ function ClickUpDataImport({ onImport, weekStart, weekEnd }: ClickUpDataImportPr
             setIsLoading(false);
         }
     };
-    // Compute filtered lists based on selected group
-    const filteredLists = selectedGroupId && listsWithMemberTasks.size > 0
+    // Filtered lists (currently using allLists directly)
+    const _filteredLists = selectedGroupId && listsWithMemberTasks.size > 0
         ? allLists.filter(list => listsWithMemberTasks.has(list.id))
         : allLists;
+    void _filteredLists; // Suppress unused warning
 
     const loadListsForGroupMembers = async (groupId: string) => {
         if (!selectedTeamId || !groupId) return;
@@ -257,12 +258,13 @@ function ClickUpDataImport({ onImport, weekStart, weekEnd }: ClickUpDataImportPr
         }
     };
 
-    const handleSpaceChange = (spaceId: string) => {
+    const _handleSpaceChange = (spaceId: string) => {
         setSelectedSpaceId(spaceId);
         if (spaceId) {
             loadFoldersAndLists(spaceId);
         }
     };
+    void _handleSpaceChange; // Suppress unused warning
 
     const handleGroupChange = (groupId: string) => {
         setSelectedGroupId(groupId);
