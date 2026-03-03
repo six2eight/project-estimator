@@ -3,6 +3,10 @@ import * as XLSX from 'xlsx-js-style';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import './DevelopmentKPIs.css';
+import ClickUpSettings from './components/ClickUpSettings';
+import ClickUpDataImport from './components/ClickUpDataImport';
+import { isAuthenticated } from './services/clickupApi';
+import type { DevelopmentTaskFromClickUp } from './services/clickupApi';
 
 interface DevelopmentTask {
     id: string;
@@ -15,8 +19,8 @@ interface DevelopmentTask {
     isOnTime: boolean;
 }
 
-// Predefined list of developers
-const DEVELOPERS = [
+// Default list of developers - can be updated from ClickUp
+const DEFAULT_DEVELOPERS = [
     'Abdullah Al Mukit',
     'Kamal Hosen',
     'Md. Mostafizur Rahman',
@@ -53,6 +57,21 @@ function DevelopmentKPIs() {
 
     const [reportTitle, setReportTitle] = useState<string>(() => {
         return localStorage.getItem('devKPI_reportTitle') || 'Weekly Development Report';
+    });
+
+    // ClickUp integration state
+    const [showClickUpSettings, setShowClickUpSettings] = useState(false);
+    const [isClickUpConnected, setIsClickUpConnected] = useState(() => isAuthenticated());
+    const [developers, setDevelopers] = useState<string[]>(() => {
+        const saved = localStorage.getItem('devKPI_developers');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch {
+                return DEFAULT_DEVELOPERS;
+            }
+        }
+        return DEFAULT_DEVELOPERS;
     });
 
     // Calculate week end date (Sunday)
@@ -104,6 +123,40 @@ function DevelopmentKPIs() {
     useEffect(() => {
         localStorage.setItem('devKPI_reportTitle', reportTitle);
     }, [reportTitle]);
+
+    // Save developers to localStorage
+    useEffect(() => {
+        localStorage.setItem('devKPI_developers', JSON.stringify(developers));
+    }, [developers]);
+
+    // Handle ClickUp data import
+    const handleClickUpImport = (importedTasks: DevelopmentTaskFromClickUp[], members: string[]) => {
+        // Update developers list with imported members
+        if (members.length > 0) {
+            const uniqueMembers = [...new Set([...developers, ...members])];
+            setDevelopers(uniqueMembers);
+        }
+
+        // Convert imported tasks to our DevelopmentTask format
+        const newTasks: DevelopmentTask[] = importedTasks.map(task => ({
+            id: task.id,
+            taskName: task.taskName,
+            assignee: task.assignee,
+            hoursLogged: task.hoursLogged,
+            dueDate: task.dueDate,
+            completedDate: task.completedDate,
+            isCompleted: task.isCompleted,
+            isOnTime: task.isOnTime,
+        }));
+
+        // Merge with existing tasks (avoid duplicates by ID)
+        const existingIds = new Set(tasks.map(t => t.id));
+        const tasksToAdd = newTasks.filter(t => !existingIds.has(t.id));
+
+        if (tasksToAdd.length > 0) {
+            setTasks([...tasks, ...tasksToAdd]);
+        }
+    };
 
     const addTask = () => {
         const newTask: DevelopmentTask = {
@@ -518,6 +571,17 @@ function DevelopmentKPIs() {
                         <p className="text-secondary">Track development hours and task completion metrics</p>
                     </div>
                     <div className="header-actions">
+                        <button
+                            className={`btn ${isClickUpConnected ? 'btn-success' : 'btn-secondary'}`}
+                            onClick={() => setShowClickUpSettings(true)}
+                            title={isClickUpConnected ? 'Connected to ClickUp' : 'Connect to ClickUp'}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            {isClickUpConnected ? 'ClickUp Connected' : 'Connect ClickUp'}
+                        </button>
                         <button className="btn btn-secondary" onClick={clearAll}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
@@ -753,7 +817,7 @@ function DevelopmentKPIs() {
                                                     className="input-full"
                                                 >
                                                     <option value="">Select assignee...</option>
-                                                    {DEVELOPERS.map(dev => (
+                                                    {developers.map((dev: string) => (
                                                         <option key={dev} value={dev}>{dev}</option>
                                                     ))}
                                                 </select>
@@ -832,7 +896,22 @@ function DevelopmentKPIs() {
                         </button>
                     </div>
                 </div>
+
+                {/* ClickUp Data Import */}
+                <ClickUpDataImport
+                    onImport={handleClickUpImport}
+                    weekStart={currentWeekStart}
+                    weekEnd={currentWeekEnd}
+                />
             </main>
+
+            {/* ClickUp Settings Modal */}
+            {showClickUpSettings && (
+                <ClickUpSettings
+                    onClose={() => setShowClickUpSettings(false)}
+                    onConnectionChange={(connected) => setIsClickUpConnected(connected)}
+                />
+            )}
         </div>
     );
 }

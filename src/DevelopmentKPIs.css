@@ -47,6 +47,19 @@
     font-size: 0.875rem;
 }
 
+/* Button Success - for ClickUp connected state */
+.btn-success {
+    background: linear-gradient(135deg, hsl(160, 80%, 35%), hsl(160, 70%, 45%));
+    color: white;
+    border: 1px solid hsl(160, 70%, 40%);
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, hsl(160, 80%, 40%), hsl(160, 70%, 50%));
+    box-shadow: 0 4px 12px hsla(160, 80%, 40%, 0.3);
+    transform: translateY(-1px);
+}
+
 /* Week Calendar Picker */
 .week-calendar-picker {
     position: relative;
