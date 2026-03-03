@@ -446,6 +446,36 @@
     text-overflow: ellipsis;
 }
 
+.inline-input {
+    width: 70px;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary, #ffffff);
+    font-size: 0.85rem;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.inline-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.inline-input::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+/* Hide number input spinners */
+.inline-input::-webkit-outer-spin-button,
+.inline-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .preview-table .task-id {
     font-family: monospace;
     font-size: 0.8rem;

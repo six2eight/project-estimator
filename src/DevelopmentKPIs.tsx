@@ -74,6 +74,11 @@ function DevelopmentKPIs() {
         return DEFAULT_DEVELOPERS;
     });
 
+    // Last week hours log (manual input)
+    const [lastWeekHours, setLastWeekHours] = useState<string>(() => {
+        return localStorage.getItem('devKPI_lastWeekHours') || '';
+    });
+
     // Calculate week end date (Sunday)
     const currentWeekEnd = useMemo(() => {
         const start = new Date(currentWeekStart);
@@ -128,6 +133,11 @@ function DevelopmentKPIs() {
     useEffect(() => {
         localStorage.setItem('devKPI_developers', JSON.stringify(developers));
     }, [developers]);
+
+    // Save last week hours to localStorage
+    useEffect(() => {
+        localStorage.setItem('devKPI_lastWeekHours', lastWeekHours);
+    }, [lastWeekHours]);
 
     // Handle ClickUp data import
     const handleClickUpImport = (importedTasks: DevelopmentTaskFromClickUp[], members: string[]) => {
@@ -245,9 +255,22 @@ function DevelopmentKPIs() {
         });
 
         exportData.push({
-            'Name': 'Total Development Hours Logged',
+            'Name': 'Total Development Hours',
             'Hours': totalDisplayHours
         });
+
+        // Last Week Time Logs
+        if (lastWeekHours) {
+            const lwNum = parseFloat(lastWeekHours);
+            const lwHrs = Math.floor(lwNum);
+            const lwMins = Math.round((lwNum - lwHrs) * 60);
+            const lwDisplay = lwMins > 0 ? `${lwHrs}hrs ${lwMins}min` : `${lwHrs}hrs`;
+
+            exportData.push({
+                'Name': 'Last Week Hours',
+                'Hours': lwDisplay
+            });
+        }
 
         // Add blank rows
         exportData.push({
@@ -345,6 +368,7 @@ function DevelopmentKPIs() {
                 if (cellValue.includes('KPI 1:') ||
                     cellValue.includes('KPI 2:') ||
                     cellValue.startsWith('Total Development Hours Logged') ||
+                    cellValue.startsWith('Last Week Time Logs') ||
                     cellValue.startsWith('On-Time Completion =')) {
                     const summaryCells = [`A${R + 1}`, `B${R + 1}`];
                     summaryCells.forEach(cell => {
@@ -474,9 +498,28 @@ function DevelopmentKPIs() {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(255, 255, 255);
-        doc.text('Total Design Hours Logged', 18, yPosition + 6);
+        doc.text('Total Hours Logged', 18, yPosition + 6);
         doc.text(totalDisplayHours, pageWidth - 18, yPosition + 6, { align: 'right' });
-        yPosition += 30;
+        yPosition += 18;
+
+        // Last Week Time Logs
+        if (lastWeekHours) {
+            const lwNum = parseFloat(lastWeekHours);
+            const lwHrs = Math.floor(lwNum);
+            const lwMins = Math.round((lwNum - lwHrs) * 60);
+            const lwDisplay = lwMins > 0 ? `${lwHrs}hrs ${lwMins}min` : `${lwHrs}hrs`;
+
+            doc.setFillColor(245, 245, 250); // Light grey-white
+            doc.rect(14, yPosition - 2, pageWidth - 28, 14, 'F');
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(60, 60, 60);
+            doc.text('Last Week Hours', 18, yPosition + 6);
+            doc.text(lwDisplay, pageWidth - 18, yPosition + 6, { align: 'right' });
+            yPosition += 18;
+        }
+        yPosition += 12;
 
         // KPI 2: On-Time Task Completion
         doc.setFillColor(240, 253, 244); // Light green background
@@ -774,6 +817,74 @@ function DevelopmentKPIs() {
                         </div>
                     </div>
                 )}
+
+                {/* Last Week Hours Logged - Manual Input */}
+                <div className="card glass animate-slide-in" style={{ marginBottom: '2rem' }}>
+                    <div style={{ padding: '1.5rem' }}>
+                        <h3 style={{
+                            fontSize: '1.25rem',
+                            fontWeight: '600',
+                            marginBottom: '1.5rem',
+                            color: 'var(--text-primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            Last Week Time Logs
+                        </h3>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1rem'
+                        }}>
+                            <label style={{
+                                fontSize: '0.95rem',
+                                fontWeight: '500',
+                                color: 'var(--text-secondary)',
+                                whiteSpace: 'nowrap'
+                            }}>
+                                Total Hours:
+                            </label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.5"
+                                placeholder="Enter last week total hours..."
+                                value={lastWeekHours}
+                                onChange={(e) => setLastWeekHours(e.target.value)}
+                                style={{
+                                    padding: '0.75rem 1rem',
+                                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                                    borderRadius: '10px',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    color: 'var(--text-primary, #ffffff)',
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    width: '250px',
+                                    transition: 'all 0.2s ease'
+                                }}
+                            />
+                            {lastWeekHours && (
+                                <span style={{
+                                    fontSize: '0.9rem',
+                                    color: '#818cf8',
+                                    fontWeight: '600'
+                                }}>
+                                    {(() => {
+                                        const num = parseFloat(lastWeekHours);
+                                        const hrs = Math.floor(num);
+                                        const mins = Math.round((num - hrs) * 60);
+                                        return mins > 0 ? `${hrs}hrs ${mins}min` : `${hrs}hrs`;
+                                    })()}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
                 {/* Tasks Table */}
                 <div className="card glass animate-slide-in">

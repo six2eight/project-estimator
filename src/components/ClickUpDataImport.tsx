@@ -817,6 +817,7 @@ function ClickUpDataImport({ onImport, weekStart, weekEnd }: ClickUpDataImportPr
                                             <th>Task Name</th>
                                             <th>Assignee</th>
                                             <th>Hours</th>
+                                            <th>Last Week Time Logs</th>
                                             <th>Due Date</th>
                                             <th>Status</th>
                                             <th>Completed Date</th>
@@ -840,6 +841,24 @@ function ClickUpDataImport({ onImport, weekStart, weekEnd }: ClickUpDataImportPr
                                                 <td className="task-name">{task.taskName}</td>
                                                 <td>{task.assignee || '-'}</td>
                                                 <td>{task.hoursLogged.toFixed(1)}h</td>
+                                                <td>
+                                                    <input
+                                                        type="number"
+                                                        className="inline-input"
+                                                        placeholder="0.0"
+                                                        step="0.1"
+                                                        min="0"
+                                                        value={task.lastWeekHours ?? ''}
+                                                        onChange={(e) => {
+                                                            e.stopPropagation();
+                                                            const val = e.target.value ? parseFloat(e.target.value) : undefined;
+                                                            setFetchedTasks(prev => prev.map(t =>
+                                                                t.id === task.id ? { ...t, lastWeekHours: val } : t
+                                                            ));
+                                                        }}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </td>
                                                 <td>{task.dueDate || '-'}</td>
                                                 <td>
                                                     <span className={`status-pill status-${task.status.toLowerCase().replace(/\s+/g, '-')}`}>

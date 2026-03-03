@@ -529,6 +529,7 @@ export interface DevelopmentTaskFromClickUp {
     taskId: string;
     assignee: string;
     hoursLogged: number;
+    lastWeekHours?: number; // Manual input: last week's time logs
     dueDate: string;
     completedDate: string;
     isCompleted: boolean;
