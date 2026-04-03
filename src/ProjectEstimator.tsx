@@ -79,19 +79,18 @@ function ProjectEstimator() {
     ));
   };
 
-  const exportToExcel = () => {
+  // Build the Excel workbook (shared between download and open-in-Excel)
+  const buildExcelWorkbook = () => {
     // Helper function to format hours
     const formatHours = (min: number, max: number): string => {
       if (min === 0 && max === 0) return '';
 
-      // Handle minutes (values less than 1 hour)
       const formatValue = (val: number): string => {
         if (val === 0) return '0';
         if (val < 1) {
           const minutes = Math.round(val * 60);
           return `${minutes} min`;
         }
-        // Remove .0 for whole numbers
         return val % 1 === 0 ? `${val}` : `${val}`;
       };
 
@@ -102,7 +101,6 @@ function ProjectEstimator() {
         return minStr.includes('min') ? minStr : `${minStr} hr`;
       }
 
-      // For ranges, add hr at the end
       if (minStr.includes('min') || maxStr.includes('min')) {
         return `${minStr} - ${maxStr}`;
       }
@@ -151,10 +149,10 @@ function ProjectEstimator() {
 
     // Set column widths
     ws['!cols'] = [
-      { wch: 35 }, // Page Name/Task Name
-      { wch: 20 }, // Desktop (Hours)
-      { wch: 20 }, // Responsive (Hours)
-      { wch: 25 }  // Total Range (Hours)
+      { wch: 35 },
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 25 }
     ];
 
     // Apply Arial font to all cells
@@ -177,34 +175,20 @@ function ProjectEstimator() {
     headerCells.forEach(cell => {
       if (ws[cell]) {
         ws[cell].s = {
-          font: {
-            bold: true,
-            sz: 11,
-            name: 'Arial'
-          },
-          alignment: {
-            vertical: 'center',
-            horizontal: 'left'
-          }
+          font: { bold: true, sz: 11, name: 'Arial' },
+          alignment: { vertical: 'center', horizontal: 'left' }
         };
       }
     });
 
     // Apply bold formatting to TOTAL HOURS row (last row)
-    const totalRowNum = exportData.length + 1; // +1 because of header row
+    const totalRowNum = exportData.length + 1;
     const totalCells = [`A${totalRowNum}`, `B${totalRowNum}`, `C${totalRowNum}`, `D${totalRowNum}`];
     totalCells.forEach(cell => {
       if (ws[cell]) {
         ws[cell].s = {
-          font: {
-            bold: true,
-            sz: 11,
-            name: 'Arial'
-          },
-          alignment: {
-            vertical: 'center',
-            horizontal: 'left'
-          }
+          font: { bold: true, sz: 11, name: 'Arial' },
+          alignment: { vertical: 'center', horizontal: 'left' }
         };
       }
     });
@@ -212,7 +196,6 @@ function ProjectEstimator() {
     // Truncate sheet name to 31 characters (Excel limit)
     const sheetName = (projectTitle || 'Project Estimate').substring(0, 31);
 
-    // Create workbook with cellStyles enabled
     const wb = XLSX.utils.book_new();
     wb.Props = {
       Title: projectTitle || 'Project Estimate',
@@ -221,12 +204,17 @@ function ProjectEstimator() {
     };
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
-    // Generate filename with timestamp
-    const timestamp = new Date().toISOString().split('T')[0];
-    const filename = `${projectTitle.toLowerCase().replace(/\s+/g, '-')}-${timestamp}.xlsx`;
+    return wb;
+  };
 
-    // Save file (xlsx-js-style automatically handles cell styles)
-    XLSX.writeFile(wb, filename);
+  const getExcelFilename = () => {
+    const timestamp = new Date().toISOString().split('T')[0];
+    return `${projectTitle.toLowerCase().replace(/\s+/g, '-')}-${timestamp}.xlsx`;
+  };
+
+  const exportToExcel = () => {
+    const wb = buildExcelWorkbook();
+    XLSX.writeFile(wb, getExcelFilename());
   };
 
   const clearAll = () => {

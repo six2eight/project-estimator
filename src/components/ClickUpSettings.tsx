@@ -48,6 +48,7 @@ function ClickUpSettings({ onClose, onConnectionChange }: ClickUpSettingsProps) 
         if (code) {
             handleOAuthCallback(code);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchUserInfo = async () => {

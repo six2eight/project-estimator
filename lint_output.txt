@@ -1,0 +1,24 @@
+
+> project-estimator@0.0.0 lint
+> eslint .
+
+
+/Users/robiulshagor/Projects/project-estimator/src/DevelopmentKPIs.tsx
+  212:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  484:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robiulshagor/Projects/project-estimator/src/ProjectEstimator.tsx
+  253:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robiulshagor/Projects/project-estimator/src/components/ClickUpDataImport.tsx
+   73:8   warning  React Hook useEffect has a missing dependency: 'loadTeams'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  422:94  error    Unnecessary escape character: \-                                                                              no-useless-escape
+
+/Users/robiulshagor/Projects/project-estimator/src/components/ClickUpSettings.tsx
+  51:8  warning  React Hook useEffect has a missing dependency: 'handleOAuthCallback'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/robiulshagor/Projects/project-estimator/src/services/clickupApi.ts
+  51:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 7 problems (5 errors, 2 warnings)
+

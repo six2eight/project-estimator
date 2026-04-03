@@ -70,6 +70,7 @@ function ClickUpDataImport({ onImport, weekStart, weekEnd }: ClickUpDataImportPr
         if (isAuthenticated()) {
             loadTeams();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const loadTeams = async () => {
@@ -419,7 +420,7 @@ function ClickUpDataImport({ onImport, weekStart, weekEnd }: ClickUpDataImportPr
                         if (timeInStatus) {
                             const targetStatus = 'task-completed';
                             // Helper to normalize status string (remove spaces, hyphens, lowercase)
-                            const normalize = (s: string) => s ? s.toLowerCase().replace(/[\s\-]+/g, '') : '';
+                            const normalize = (s: string) => s ? s.toLowerCase().replace(/[\s-]+/g, '') : '';
 
                             // 1. Check if CURRENT status is 'complete'
                             if (timeInStatus.current_status && normalize(timeInStatus.current_status.status) === targetStatus) {

@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import Navigation from './Navigation';
 import ProjectEstimator from './ProjectEstimator';
 import DevelopmentKPIs from './DevelopmentKPIs';
+import ResourceMonitor from './ResourceMonitor';
 import './App.css';
 
-type PageType = 'estimator' | 'kpis';
+type PageType = 'estimator' | 'kpis' | 'resource';
 
 function App() {
     const [currentPage, setCurrentPage] = useState<PageType>(() => {
@@ -24,7 +25,9 @@ function App() {
         <div className="app-wrapper">
             <Navigation currentPage={currentPage} onPageChange={handlePageChange} />
             <div className="page-container">
-                {currentPage === 'estimator' ? <ProjectEstimator /> : <DevelopmentKPIs />}
+                {currentPage === 'estimator' && <ProjectEstimator />}
+                {currentPage === 'kpis' && <DevelopmentKPIs />}
+                {currentPage === 'resource' && <ResourceMonitor />}
             </div>
         </div>
     );

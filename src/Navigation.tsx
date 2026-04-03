@@ -1,8 +1,10 @@
 import './Navigation.css';
 
+type PageType = 'estimator' | 'kpis' | 'resource';
+
 interface NavigationProps {
-    currentPage: 'estimator' | 'kpis';
-    onPageChange: (page: 'estimator' | 'kpis') => void;
+    currentPage: PageType;
+    onPageChange: (page: PageType) => void;
 }
 
 function Navigation({ currentPage, onPageChange }: NavigationProps) {
@@ -38,6 +40,18 @@ function Navigation({ currentPage, onPageChange }: NavigationProps) {
                                 <path d="M18 17V9M13 17V5M8 17v-3" />
                             </svg>
                             <span>KPIs Reports</span>
+                        </button>
+
+                        <button
+                            className={`nav-link ${currentPage === 'resource' ? 'active' : ''}`}
+                            onClick={() => onPageChange('resource')}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                            </svg>
+                            <span>Resource Monitor</span>
                         </button>
                     </div>
                 </div>

@@ -48,7 +48,7 @@ export interface ClickUpTask {
         id: string;
         name: string;
         type: string;
-        value?: any;
+        value?: unknown;
     }>;
     parent?: string | null; // Parent task ID if this is a subtask
     subtasks?: ClickUpTask[]; // Nested subtasks if available

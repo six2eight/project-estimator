@@ -209,7 +209,7 @@ function DevelopmentKPIs() {
     };
 
     const exportToExcel = () => {
-        const exportData: any[] = [];
+        const exportData: Record<string, string | number>[] = [];
 
         // KPI 1: Development Hours Logged by Team Member
         exportData.push({
@@ -481,7 +481,7 @@ function DevelopmentKPIs() {
                 margin: { left: 14, right: 14 }
             });
 
-            yPosition = (doc as any).lastAutoTable.finalY + 8;
+            yPosition = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
         }
 
         // Total Development Hours - Highlighted box
