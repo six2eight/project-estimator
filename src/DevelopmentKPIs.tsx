@@ -92,8 +92,10 @@ function DevelopmentKPIs() {
         const totalHours = tasks.reduce((sum, task) => sum + (task.hoursLogged || 0), 0);
         const completedTasks = tasks.filter(task => task.isCompleted);
         const onTimeTasks = completedTasks.filter(task => task.isOnTime);
-        const onTimePercentage = completedTasks.length > 0
-            ? (onTimeTasks.length / completedTasks.length) * 100
+        const lateTasks = completedTasks.filter(task => !task.isOnTime);
+        // On-time percentage: on-time completed tasks out of total tasks
+        const onTimePercentage = tasks.length > 0
+            ? (onTimeTasks.length / tasks.length) * 100
             : 0;
 
         // Calculate hours by assignee
@@ -110,6 +112,8 @@ function DevelopmentKPIs() {
         return {
             totalHours: totalHours.toFixed(1),
             completedTasksCount: completedTasks.length,
+            onTimeTasksCount: onTimeTasks.length,
+            lateTasksCount: lateTasks.length,
             totalTasksCount: tasks.length,
             onTimePercentage: onTimePercentage.toFixed(1),
             hoursByAssignee
@@ -293,18 +297,37 @@ function DevelopmentKPIs() {
             'Hours': ''
         });
 
-        const totalTasksDue = tasks.filter(task => task.dueDate <= currentWeekEnd).length;
+        const totalTasksDue = tasks.length;
+        const totalCompleted = tasks.filter(task => task.isCompleted).length;
         const completedOnTime = tasks.filter(task =>
-            task.isCompleted && task.isOnTime && task.dueDate <= currentWeekEnd
+            task.isCompleted && task.isOnTime
+        ).length;
+        const completedLate = tasks.filter(task =>
+            task.isCompleted && !task.isOnTime
         ).length;
 
         exportData.push({
-            'Name': `Total Development Tasks Due Last Week: ${totalTasksDue}`,
+            'Name': `Total Development Tasks: ${totalTasksDue}`,
             'Hours': ''
         });
 
         exportData.push({
-            'Name': `Completed On Time (By Any Developer): ${completedOnTime}`,
+            'Name': `Total Completed Tasks: ${totalCompleted}`,
+            'Hours': ''
+        });
+
+        exportData.push({
+            'Name': `Completed On Time: ${completedOnTime}`,
+            'Hours': ''
+        });
+
+        exportData.push({
+            'Name': `Completed Late: ${completedLate}`,
+            'Hours': ''
+        });
+
+        exportData.push({
+            'Name': `Pending Tasks: ${totalTasksDue - totalCompleted}`,
             'Hours': ''
         });
 
@@ -531,21 +554,26 @@ function DevelopmentKPIs() {
         doc.text('KPI 2: On-Time Task Completion (%)', 18, yPosition);
         yPosition += 12;
 
-        // Calculate tasks for the week
-        const totalTasksDue = tasks.filter(task => task.dueDate <= currentWeekEnd).length;
+        // Calculate tasks for the report
+        const totalTasksDue = tasks.length;
+        const totalCompleted = tasks.filter(task => task.isCompleted).length;
         const completedOnTime = tasks.filter(task =>
-            task.isCompleted && task.isOnTime && task.dueDate <= currentWeekEnd
+            task.isCompleted && task.isOnTime
         ).length;
+        const completedLate = tasks.filter(task =>
+            task.isCompleted && !task.isOnTime
+        ).length;
+        const pendingTasks = totalTasksDue - totalCompleted;
 
         // Create a nice box for the metrics
         doc.setDrawColor(99, 102, 241);
         doc.setLineWidth(0.5);
-        doc.rect(14, yPosition - 2, pageWidth - 28, 32, 'S');
+        doc.rect(14, yPosition - 2, pageWidth - 28, 48, 'S');
 
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(60, 60, 60);
-        doc.text(`•  Total Design Tasks Due Last Week: `, 20, yPosition + 6);
+        doc.text(`•  Total Development Tasks: `, 20, yPosition + 6);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(99, 102, 241);
         doc.text(`${totalTasksDue}`, 110, yPosition + 6);
@@ -553,18 +581,23 @@ function DevelopmentKPIs() {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(60, 60, 60);
-        doc.text(`•  Completed On Time (By Any Developer): `, 20, yPosition + 14);
+        doc.text(`•  Total Completed Tasks: `, 20, yPosition + 14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(99, 102, 241);
-        doc.text(`${completedOnTime}`, 110, yPosition + 14);
+        doc.text(`${totalCompleted}`, 110, yPosition + 14);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        doc.text(`•  Completed On Time: ${completedOnTime}  |  Completed Late: ${completedLate}  |  Pending: ${pendingTasks}`, 20, yPosition + 22);
 
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(60, 60, 60);
-        doc.text(`•  On-Time Completion = `, 20, yPosition + 24);
+        doc.text(`•  On-Time Completion = `, 20, yPosition + 34);
         doc.setFontSize(12);
         doc.setTextColor(34, 197, 94);
-        doc.text(`${kpis.onTimePercentage}%`, 75, yPosition + 24);
+        doc.text(`${kpis.onTimePercentage}%`, 75, yPosition + 34);
 
         // Footer
         doc.setFontSize(8);
@@ -743,7 +776,7 @@ function DevelopmentKPIs() {
                             <div className="kpi-content">
                                 <div className="kpi-label">On-Time Task Completion</div>
                                 <div className="kpi-value">{kpis.onTimePercentage}%</div>
-                                <div className="kpi-subtitle">{kpis.completedTasksCount} of {kpis.totalTasksCount} tasks completed</div>
+                                <div className="kpi-subtitle">{kpis.completedTasksCount} completed ({kpis.onTimeTasksCount} on time, {kpis.lateTasksCount} late) · {kpis.totalTasksCount - kpis.completedTasksCount} pending</div>
                             </div>
                         </div>
                     </div>
